@@ -1,6 +1,15 @@
 // Cliente mínimo para a API REST do Upstash Redis (sem dependências).
-const URL_ = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-const TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+// Aceita as variáveis com ou sem prefixo (ex.: maratonamarvel_KV_REST_API_URL).
+function findEnv(suffixes, exclude) {
+  const keys = Object.keys(process.env);
+  for (const suf of suffixes) {
+    const k = keys.find((x) => (x === suf || x.endsWith("_" + suf)) && !(exclude && x.includes(exclude)));
+    if (k && process.env[k]) return process.env[k];
+  }
+  return undefined;
+}
+const URL_ = findEnv(["KV_REST_API_URL", "UPSTASH_REDIS_REST_URL"]);
+const TOKEN = findEnv(["KV_REST_API_TOKEN", "UPSTASH_REDIS_REST_TOKEN"], "READ_ONLY");
 
 async function pipeline(commands) {
   if (!URL_ || !TOKEN) throw new Error("missing_redis_env");
