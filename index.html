@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Maratona Marvel</title>
+<style>*{box-sizing:border-box}html{color-scheme:light}body{margin:0}[hidden]{display:none!important}</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Figtree:wght@400;500;600&display=swap">
+<style>
+  /* Layout: coluna única estreita. Contagem regressiva no topo, quadro de quem já viu quanto, depois a lista por fase com um marcador por pessoa. */
+  :root {
+    --bg: #efeeeb;
+    --surface: #fbfaf8;
+    --fg: #1c1b1a;
+    --muted: #6b6864;
+    --line: #dad7d1;
+    --accent: #b3121f;
+    --accent-fg: #ffffff;
+    --ok: #2e7d5b;
+    --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+    --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #151413; --surface: #1f1d1c; --fg: #ece9e4; --muted: #96918a;
+      --line: #322f2c; --accent: #ef4a55; --accent-fg: #1a0a0c; --ok: #5cc596;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #151413; --surface: #1f1d1c; --fg: #ece9e4; --muted: #96918a;
+    --line: #322f2c; --accent: #ef4a55; --accent-fg: #1a0a0c; --ok: #5cc596;
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 16px; line-height: 1.45; padding-inline: 16px; padding-block: 28px 56px; }
+  .wrap { max-width: 640px; margin-inline: auto; display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+  h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(2.4rem, 10vw, 3.6rem); line-height: 0.95; text-transform: uppercase; letter-spacing: 0.01em; margin: 0; }
+  .eyebrow { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+  .countdown { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; border-top: 3px solid var(--fg); padding-top: 12px; }
+  .days { font-family: var(--font-display); font-weight: 700; font-size: 3rem; line-height: 1; color: var(--accent); font-variant-numeric: tabular-nums; }
+  .countdown p { margin: 0; color: var(--muted); font-size: 0.95rem; flex: 1; min-width: 200px; }
+  .countdown strong { color: var(--fg); font-weight: 600; }
+  h2 { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 10px; }
+  .people { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 8px; }
+  .person { font: inherit; text-align: left; background: var(--surface); border: 1.5px solid var(--line); border-radius: 10px; padding: 10px 12px; cursor: pointer; color: var(--fg); display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .person[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .person .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .person .num { font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .mini { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; }
+  .mini > i { display: block; height: 100%; background: var(--accent); width: 0; transition: width 0.25s ease; }
+  .join { display: flex; gap: 8px; margin-top: 10px; }
+  .join input, .addform input { flex: 1; min-width: 0; font: inherit; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); }
+  .btn { font: inherit; font-weight: 600; padding: 0 16px; border-radius: 10px; border: 0; background: var(--accent); color: var(--accent-fg); cursor: pointer; min-height: 40px; }
+  .btn.ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); }
+  .pace { font-size: 0.92rem; color: var(--muted); margin: 0; }
+  .pace strong { color: var(--fg); }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tab { font: inherit; font-size: 0.88rem; font-weight: 500; padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer; }
+  .tab[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+  :is(.tab, .person, .btn, .clear, .del, input):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .group { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .ghead { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--bg); }
+  .ghead b { font-family: var(--font-display); font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .ghead span { font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--line); min-width: 0; }
+  li:last-child { border-bottom: 0; }
+  .check { appearance: none; -webkit-appearance: none; flex: none; width: 24px; height: 24px; margin: 0; border: 2px solid var(--muted); border-radius: 7px; background: transparent; cursor: pointer; display: grid; place-content: center; transition: background 0.15s, border-color 0.15s; }
+  .check::after { content: ""; width: 12px; height: 7px; border-left: 2.5px solid var(--accent-fg); border-bottom: 2.5px solid var(--accent-fg); transform: rotate(-45deg) scale(0); margin-top: -3px; transition: transform 0.12s ease; }
+  .check:checked { background: var(--accent); border-color: var(--accent); }
+  .check:checked::after { transform: rotate(-45deg) scale(1); }
+  .check:disabled { opacity: 0.4; cursor: not-allowed; }
+  .info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .ttl { overflow-wrap: anywhere; }
+  .ttl small { color: var(--muted); font-size: 0.82rem; margin-left: 6px; font-variant-numeric: tabular-nums; }
+  li.done .ttl { color: var(--muted); }
+  .seenby { display: flex; flex-wrap: wrap; gap: 4px; }
+  .seenby span { font-size: 0.75rem; padding: 1px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+  .del { flex: none; width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; font-size: 1.2rem; line-height: 1; }
+  .del:hover { color: var(--accent); background: var(--bg); }
+  .addform { display: flex; gap: 8px; }
+  .note { font-size: 0.88rem; color: var(--muted); margin: 0; }
+  .note.err { color: var(--accent); }
+  .empty { padding: 24px 16px; text-align: center; color: var(--muted); }
+  @media (prefers-reduced-motion: reduce) { .mini > i, .check, .check::after { transition: none; } }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <div class="eyebrow">Até Vingadores: Doomsday</div>
+    <h1>Maratona Marvel</h1>
+  </header>
+
+  <section class="countdown" aria-label="Contagem regressiva">
+    <div class="days" id="days">0</div>
+    <p id="daysText">dias até a estreia em 18/12/2026.</p>
+  </section>
+
+  <section>
+    <h2>Quem está na maratona</h2>
+    <div class="people" id="people"></div>
+    <form class="join" id="joinForm" autocomplete="off">
+      <input id="joinName" type="text" maxlength="30" placeholder="Seu nome" aria-label="Seu nome">
+      <button class="btn" type="submit">Entrar</button>
+    </form>
+    <p class="note" id="meNote" style="margin-top:10px"></p>
+  </section>
+
+  <p class="pace" id="pace"></p>
+
+  <div class="tabs" id="tabs">
+    <button class="tab" type="button" data-f="all" aria-pressed="true">Todos</button>
+    <button class="tab" type="button" data-f="todo" aria-pressed="false">Faltam para mim</button>
+    <button class="tab" type="button" data-f="done" aria-pressed="false">Já vi</button>
+  </div>
+
+  <div id="groups"></div>
+
+  <form class="addform" id="addForm" autocomplete="off">
+    <input id="addTitle" type="text" maxlength="100" placeholder="Adicionar outro filme à lista…" aria-label="Adicionar filme">
+    <button class="btn" type="submit">Adicionar</button>
+  </form>
+  <p class="note" id="status"></p>
+</main>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var TARGET = new Date(2026, 11, 18);
+  var BASE = [
+    ["m05", "Capitão América: O Primeiro Vingador", "1942", "Pré-Homem de Ferro"],
+    ["m37", "Quarteto Fantástico: Primeiros Passos", "Década de 1960, em outro universo", "Pré-Homem de Ferro"],
+    ["m21", "Capitã Marvel", "1995", "Pré-Homem de Ferro"],
+    ["m01", "Homem de Ferro", "2008", "Pós-Homem de Ferro"],
+    ["m03", "Homem de Ferro 2", "2010", "Pós-Homem de Ferro"],
+    ["m02", "O Incrível Hulk", "2010", "Pós-Homem de Ferro"],
+    ["m04", "Thor", "2010", "Pós-Homem de Ferro"],
+    ["m06", "Os Vingadores", "2012", "Pós-Homem de Ferro"],
+    ["m08", "Thor: O Mundo Sombrio", "2013", "Após a Batalha de Nova York"],
+    ["m07", "Homem de Ferro 3", "2013", "Após a Batalha de Nova York"],
+    ["m09", "Capitão América 2: O Soldado Invernal", "2014", "Após a Batalha de Nova York"],
+    ["m10", "Guardiões da Galáxia", "2014", "Após a Batalha de Nova York"],
+    ["m15", "Guardiões da Galáxia Vol. 2", "2014", "Após a Batalha de Nova York"],
+    ["m11", "Vingadores: Era de Ultron", "2015", "Após a Batalha de Nova York"],
+    ["m12", "Homem-Formiga", "2015", "Após a queda de Sokovia"],
+    ["m13", "Capitão América: Guerra Civil", "2016", "Após a queda de Sokovia"],
+    ["m24", "Viúva Negra", "2016, com momentos em 2017 e 2023", "Após a queda de Sokovia"],
+    ["m18", "Pantera Negra", "2016", "Após a queda de Sokovia"],
+    ["m16", "Homem-Aranha: De Volta ao Lar", "2016", "Após a queda de Sokovia"],
+    ["m14", "Doutor Estranho", "entre 2016 e 2017", "Após a queda de Sokovia"],
+    ["m17", "Thor: Ragnarok", "2017", "Após a queda de Sokovia"],
+    ["m20", "Homem-Formiga e a Vespa", "2018", "Após a queda de Sokovia"],
+    ["m19", "Vingadores: Guerra Infinita", "2018", "Após a queda de Sokovia"],
+    ["m22", "Vingadores: Ultimato", "2018 e 2023", "Após a queda de Sokovia"],
+    ["m25", "Shang-Chi e a Lenda dos Dez Anéis", "2024", "Após o Blip e a vitória contra Thanos"],
+    ["m23", "Homem-Aranha: Longe de Casa", "2024", "Após o Blip e a vitória contra Thanos"],
+    ["m27", "Homem-Aranha: Sem Volta Para Casa", "2024", "Após o Blip e a vitória contra Thanos"],
+    ["m26", "Eternos", "2024", "Após o Blip e a vitória contra Thanos"],
+    ["m28", "Doutor Estranho no Multiverso da Loucura", "2024", "Após o Blip e a vitória contra Thanos"],
+    ["m30", "Pantera Negra: Wakanda Para Sempre", "2025", "Após o Blip e a vitória contra Thanos"],
+    ["m29", "Thor: Amor e Trovão", "2025", "Após o Blip e a vitória contra Thanos"],
+    ["m31", "Homem-Formiga e a Vespa: Quantumania", "2026", "Após o Blip e a vitória contra Thanos"],
+    ["m32", "Guardiões da Galáxia Vol. 3", "2026", "Após o Blip e a vitória contra Thanos"],
+    ["m33", "As Marvels", "2026", "Após o Blip e a vitória contra Thanos"],
+    ["m34", "Deadpool & Wolverine", "2025, após Loki - Temporada 2", "Após o Blip e a vitória contra Thanos"],
+    ["m35", "Capitão América: Admirável Mundo Novo", "2027", "Após o Blip e a vitória contra Thanos"],
+    ["m36", "Thunderbolts*", "2027", "Após o Blip e a vitória contra Thanos"],
+    ["m38", "Homem-Aranha: Um Novo Dia", "2028", "Após o Blip e a vitória contra Thanos"]
+  ].map(function (r) { return { id: r[0], title: r[1], year: r[2], group: r[3], custom: false }; });
+
+  var state = { people: {}, seen: {}, custom: {} };
+  var me = null, filter = "all", loaded = false, lastWrite = 0;
+  try { me = localStorage.getItem("marvel-me"); } catch (e) {}
+
+  function rid(prefix) { return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function setStatus(msg, err) { var s = $("status"); s.textContent = msg || ""; s.className = "note" + (err ? " err" : ""); }
+  function peopleList() {
+    return Object.keys(state.people).map(function (id) { return { id: id, name: String(state.people[id].name || "Sem nome"), t: state.people[id].t || 0 }; })
+      .sort(function (a, b) { return a.t - b.t; });
+  }
+  function movies() {
+    var extra = Object.keys(state.custom).map(function (id) { return { id: id, title: String(state.custom[id].title || ""), year: "", group: "Extras", custom: true, t: state.custom[id].t || 0 }; })
+      .sort(function (a, b) { return a.t - b.t; });
+    return BASE.concat(extra);
+  }
+  function mySeen() { return (me && state.seen[me]) || {}; }
+  function validSeen(id, ms) { var s = state.seen[id] || {}, n = 0; ms.forEach(function (m) { if (s[m.id]) n++; }); return n; }
+  function iExist() { return !!(me && state.people[me]); }
+
+  function daysLeft() {
+    var now = new Date(); var start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return Math.round((TARGET - start) / 86400000);
+  }
+
+  function renderHeader(ms) {
+    var d = daysLeft();
+    $("days").textContent = d > 0 ? String(d) : "0";
+    $("daysText").textContent = d > 0 ? "dias até a estreia de Vingadores: Doutor Destino, em 18/12/2026." : (d === 0 ? "Hoje é a estreia de Vingadores: Doutor Destino." : "Vingadores: Doutor Destino já estreou.");
+    var p = $("pace");
+    if (iExist() && d > 0) {
+      var left = ms.length - validSeen(me, ms);
+      if (left <= 0) p.innerHTML = "<strong>Você já viu tudo.</strong> Pronto para a estreia.";
+      else {
+        var perWeek = Math.round(left / (d / 7) * 10) / 10;
+        p.innerHTML = "Faltam <strong>" + left + "</strong> filmes para você. Para terminar a tempo: cerca de <strong>" + String(perWeek).replace(".", ",") + " por semana</strong>.";
+      }
+    } else p.textContent = "";
+  }
+
+  function renderPeople(ms) {
+    var box = $("people"); box.textContent = "";
+    var list = peopleList();
+    list.forEach(function (pr) {
+      var b = document.createElement("button");
+      b.type = "button"; b.className = "person";
+      b.setAttribute("aria-pressed", String(pr.id === me));
+      var n = document.createElement("span"); n.className = "name"; n.textContent = pr.name;
+      var c = validSeen(pr.id, ms);
+      var num = document.createElement("span"); num.className = "num"; num.textContent = c + " de " + ms.length + " filmes";
+      var mini = document.createElement("div"); mini.className = "mini";
+      var i = document.createElement("i"); i.style.width = (ms.length ? Math.round(c / ms.length * 100) : 0) + "%"; mini.appendChild(i);
+      b.append(n, num, mini);
+      b.addEventListener("click", function () { me = pr.id; try { localStorage.setItem("marvel-me", me); } catch (e) {} render(); });
+      box.appendChild(b);
+    });
+    var note = $("meNote");
+    if (!list.length) note.textContent = "Ninguém entrou ainda. Digite seu nome e toque em Entrar para começar a marcar.";
+    else if (!iExist()) note.textContent = "Toque no seu nome acima se você já entrou, ou digite seu nome para entrar.";
+    else note.textContent = "Você está marcando como " + state.people[me].name + ". Para marcar como outra pessoa, toque no nome dela.";
+  }
+
+  function renderList(ms) {
+    var box = $("groups"); box.textContent = "";
+    var mine = mySeen(); var order = []; var byGroup = {};
+    ms.forEach(function (m) { if (!byGroup[m.group]) { byGroup[m.group] = []; order.push(m.group); } byGroup[m.group].push(m); });
+    order.forEach(function (g) {
+      var all = byGroup[g];
+      var list = all.filter(function (m) { return filter === "all" || (filter === "done" ? mine[m.id] : !mine[m.id]); });
+      if (!list.length) return;
+      var sec = document.createElement("section"); sec.className = "group";
+      var head = document.createElement("div"); head.className = "ghead";
+      var b = document.createElement("b"); b.textContent = g;
+      var done = all.filter(function (m) { return mine[m.id]; }).length;
+      var s = document.createElement("span"); s.textContent = iExist() ? done + " de " + all.length : all.length + " filmes";
+      head.append(b, s); sec.appendChild(head);
+      var ul = document.createElement("ul");
+      list.forEach(function (m) {
+        var li = document.createElement("li"); if (mine[m.id]) li.className = "done";
+        var cb = document.createElement("input"); cb.type = "checkbox"; cb.className = "check"; cb.checked = !!mine[m.id]; cb.disabled = !iExist();
+        cb.setAttribute("aria-label", "Já vi: " + m.title);
+        cb.addEventListener("change", function () { toggle(m.id, cb.checked); });
+        var info = document.createElement("div"); info.className = "info";
+        var t = document.createElement("div"); t.className = "ttl"; t.textContent = m.title;
+        if (m.year) { var y = document.createElement("small"); y.textContent = m.year; t.appendChild(y); }
+        info.appendChild(t);
+        var who = peopleList().filter(function (pr) { return state.seen[pr.id] && state.seen[pr.id][m.id]; });
+        if (who.length) {
+          var sb = document.createElement("div"); sb.className = "seenby";
+          who.forEach(function (pr) { var sp = document.createElement("span"); sp.textContent = pr.name; sb.appendChild(sp); });
+          info.appendChild(sb);
+        }
+        li.append(cb, info);
+        if (m.custom) {
+          var del = document.createElement("button"); del.type = "button"; del.className = "del"; del.textContent = "×";
+          del.setAttribute("aria-label", "Remover da lista: " + m.title);
+          del.addEventListener("click", function () { delete state.custom[m.id]; render(); send({ type: "delMovie", id: m.id }); });
+          li.appendChild(del);
+        }
+        ul.appendChild(li);
+      });
+      sec.appendChild(ul); box.appendChild(sec);
+    });
+    if (!box.children.length) { var e2 = document.createElement("div"); e2.className = "empty"; e2.textContent = "Nenhum filme nesta aba."; box.appendChild(e2); }
+    document.querySelectorAll(".tab").forEach(function (t) { t.setAttribute("aria-pressed", String(t.dataset.f === filter)); });
+  }
+
+  function render() { var ms = movies(); renderHeader(ms); renderPeople(ms); renderList(ms); }
+
+  var pending = 0;
+  function send(body) {
+    pending++; lastWrite = Date.now();
+    return fetch("/api/act", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      .then(function (r) { if (!r.ok) throw new Error("http"); return r.json(); })
+      .then(function (s) { pending--; if (!pending) { state = s; loaded = true; setStatus(""); render(); } })
+      .catch(function () { pending--; setStatus("Não foi possível salvar. Verifique a conexão e tente de novo.", true); refresh(); });
+  }
+  function refresh() {
+    if (pending) return;
+    fetch("/api/state", { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error("http"); return r.json(); })
+      .then(function (s) { if (pending) return; state = s; loaded = true; setStatus(""); render(); })
+      .catch(function () { if (!loaded) setStatus("Não foi possível carregar a lista salva. Confira se o banco de dados está conectado na Vercel.", true); });
+  }
+
+  function toggle(mid, on) {
+    if (!iExist()) return;
+    var cur = Object.assign({}, state.seen[me] || {});
+    if (on) cur[mid] = true; else delete cur[mid];
+    state.seen[me] = cur; render();
+    send({ type: "seen", pid: me, mid: mid, on: !!on });
+  }
+
+  $("joinForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var name = $("joinName").value.trim();
+    if (!name) return;
+    var id = rid("p");
+    $("joinName").value = "";
+    me = id; try { localStorage.setItem("marvel-me", id); } catch (x) {}
+    state.people[id] = { name: name, t: Date.now() }; render();
+    send({ type: "join", id: id, name: name });
+  });
+  $("addForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var t = $("addTitle").value.trim();
+    if (!t) return;
+    $("addTitle").value = "";
+    var id = rid("c");
+    state.custom[id] = { title: t, t: Date.now() }; render();
+    send({ type: "addMovie", id: id, title: t });
+  });
+  $("tabs").addEventListener("click", function (e) {
+    var t = e.target.closest(".tab"); if (!t) return; filter = t.dataset.f; render();
+  });
+
+  render();
+  refresh();
+  setInterval(function () { if (!document.hidden && Date.now() - lastWrite > 3000) refresh(); }, 8000);
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) refresh(); });
+})();
+</script>
+</body>
+</html>
